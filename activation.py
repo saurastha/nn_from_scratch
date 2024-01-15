@@ -20,11 +20,13 @@ class ReLU:
             relu.forward(input_data)
             print(relu.output)  # Output: [0, 0, 0, 1, 2]
     """
-    def __init__(self):
-        self.output = None
-
     def forward(self, x: np.array) -> np.array:
+        self.inputs = x
         self.output = np.maximum(0, x)
+
+    def backward(self, dvalues):
+        self.dinputs = dvalues.copy()
+        self.dinputs[self.inputs <= 0] = 0
 
 
 class Softmax:

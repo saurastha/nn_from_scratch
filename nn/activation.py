@@ -1,4 +1,5 @@
 import numpy as np
+from loss import CategoricalCrossEntropy
 
 
 class ReLU:
@@ -20,6 +21,7 @@ class ReLU:
             relu.forward(input_data)
             print(relu.output)  # Output: [0, 0, 0, 1, 2]
     """
+
     def forward(self, x: np.array) -> np.array:
         self.inputs = x
         self.output = np.maximum(0, x)
@@ -50,6 +52,7 @@ class Softmax:
             # Output: array([[0.09003057, 0.24472847, 0.66524096],
             #                 [0.01587624, 0.11731043, 0.86681333]])
     """
+
     def __init__(self):
         self.output = None
 
@@ -63,7 +66,7 @@ class Softmax:
     def backward(self, dvalues):
         self.dinputs = np.empty_like(dvalues)
 
-        for index,  (single_output, single_dvalues) in enumerate(zip(self.output, dvalues)):
+        for index, (single_output, single_dvalues) in enumerate(zip(self.output, dvalues)):
             single_output = single_output.reshape(-1, 1)
 
             jacobian_matrix = np.diagflat(single_output) - np.dot(single_output, single_output.T)
@@ -71,9 +74,23 @@ class Softmax:
             self.dinputs[index] = np.dot(jacobian_matrix, single_dvalues)
 
 
+class SoftmaxCategoricalCrossEntropy():
+    def __init__(self):
+        self.activation = Softmax()
+        self.loss = CategoricalCrossEntropy()
 
+    def forward(self, inputs, y_true):
+        self.activation.forward(inputs)
+        self.output = self.activation.output
+        return self.loss.calculate(self.output, y_true)
 
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+        if len(y_true.shape) == 2:
+            y_true = np.argmax(y_true, axis=1)
 
+        self.dinputs = dvalues.copy()
 
+        self.dinputs[range(samples), y_true] -= 1
 
-
+        self.dinputs = self.dinputs / samples
